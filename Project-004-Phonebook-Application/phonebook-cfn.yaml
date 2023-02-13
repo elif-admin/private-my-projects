@@ -32,6 +32,7 @@ Resources:
           ToPort: 80
           CidrIp: 0.0.0.0/0
       VpcId: !Ref MyVPC 
+
   WebServerSecGr:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -46,7 +47,7 @@ Resources:
           ToPort: 80
           SourceSecurityGroupId: !GetAtt ALBSecGr.GroupId
       VpcId: !Ref MyVPC
-  
+
   WebServerLT:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -72,12 +73,12 @@ Resources:
                 pip3 install flask_mysql
                 echo "${MyDBURI}" > /home/ec2-user/dbserver.endpoint
                 TOKEN="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"
-                FOLDER="https://$TOKEN@raw.githubusercontent.com/hakancar/private-my-projects/main/Project-004-Phonebook-Application/"
+                FOLDER="https://$TOKEN@raw.githubusercontent.com/elif-admin/private-my-projects/main/Project-004-Phonebook-Application/"
                 curl -s --create-dirs -o "/home/ec2-user/templates/index.html" -L "$FOLDER"templates/index.html
                 curl -s --create-dirs -o "/home/ec2-user/templates/add-update.html" -L "$FOLDER"templates/add-update.html
                 curl -s --create-dirs -o "/home/ec2-user/templates/delete.html" -L "$FOLDER"templates/delete.html
-                curl -s --create-dirs -o "/home/ec2-user/app.py" -L "$FOLDER"phonebook-app.py
-                python3 /home/ec2-user/app.py
+                curl -s --create-dirs -o "/home/ec2-user/phonebook-app.py" -L "$FOLDER"phonebook-app.py
+                python3 /home/ec2-user/phonebook-app.py
               - MyDBURI: !GetAtt MyDBServer.Endpoint.Address
   WebServerTG:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -97,6 +98,7 @@ Resources:
         - !GetAtt ALBSecGr.GroupId
       Subnets: !Ref Subnets
       Type: application
+
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -106,6 +108,7 @@ Resources:
       LoadBalancerArn: !Ref AppLoadB # Required
       Port: 80
       Protocol: HTTP
+
   WebServerASG:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -121,33 +124,37 @@ Resources:
       MinSize: 1 # Required
       TargetGroupARNs:
         - !Ref WebServerTG
+
   MyDBSecGr:
     Type: AWS::RDS::DBSecurityGroup
     Properties:
-      GroupDescription: front end RDS
+      GroupDescription: back end RDS
       DBSecurityGroupIngress: # Required
         - CIDRIP: 0.0.0.0/0
         - EC2SecurityGroupId: !GetAtt WebServerSecGr.GroupId
+
   MyDBServer:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Delete
     Properties:
       AllocatedStorage: 20
       AllowMajorVersionUpgrade: false
-      AutoMinorVersionUpgrade: true
-      BackupRetentionPeriod: 0
+      AutoMinorVersionUpgrade: false
+      BackupRetentionPeriod: 0  #backup almasini istemedigimizde burayi 0 yazariz.
       DBInstanceClass: db.t2.micro
-      DBInstanceIdentifier: hakan-phonebook-db
+      DBInstanceIdentifier: elif-phonebook-db
       DBName: clarusway_phonebook
       DBSecurityGroups:
         - !Ref MyDBSecGr
       Engine: MySQL
-      EngineVersion: 8.0.19
-      MasterUserPassword: Serdar_1
+      EngineVersion: 8.0.28
+      MasterUserPassword: awsdevops13
       MasterUsername: admin
       Port: 3306
-      PubliclyAccessible: true
+      PubliclyAccessible: true        
+  
 Outputs:
+
   WebsiteURL:
     Value: !Sub 
       - http://${ALBAddress}
